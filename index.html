@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multipart Upload</title>
+</head>
+
+<body>
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Upload</button>
+
+    <script>
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) return;
+            const file = fileInput.files[0];
+            const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+            const initResponse = await fetch('http://localhost:3000/initiate-multipart-upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: file.name, fileType: file.type })
+            });
+            const { uploadId } = await initResponse.json();
+
+            const promises = [];
+            for (let partNumber = 1; partNumber <= totalChunks; partNumber++) {
+                const start = (partNumber - 1) * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunk = file.slice(start, end);
+
+                const presignedResponse = await fetch(`http://localhost:3000/get-presigned-url?uploadId=${uploadId}&partNumber=${partNumber}&filename=${file.name}`);
+                const { url } = await presignedResponse.json();
+
+                promises.push(fetch(url, {
+                    method: 'PUT',
+                    body: chunk
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to upload part ${partNumber}`);
+                    }
+                    return response.headers.get('Etag');
+                }));
+            }
+
+            const etags = await Promise.all(promises);
+
+            await fetch('http://localhost:3000/complete-multipart-upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: file.name, uploadId, parts: etags.map((etag, index) => ({ ETag: etag, PartNumber: index + 1 })) })
+            });
+
+            alert('Upload complete');
+        }
+    </script>
+</body>
+
+</html>

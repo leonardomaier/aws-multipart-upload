@@ -5,19 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multipart Upload</title>
-    <script src="./dist/lib.js"></script>
 </head>
 
 <body>
     <input type="file" id="fileInput" />
-    <button onclick="uploadFile()">Upload</button>
+    <button id="uploadButton">Upload</button>
 
-    <script>
-        const fileInput = document.getElementById('fileInput');
+    <script type="module">
+        import { AWSMultipartUpload } from './dist/lib.js';
 
-        const files = fileInput.files;
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileInput');
+            fileUploader.uploadFiles(fileInput.files)
+        });
 
-        const fileUploader = new AWSMultipartUpload({
+        var fileUploader = new AWSMultipartUpload({
             host: 'http://localhost:3000',
             initiateMultipartUploadEndpoint: 'initiate-multipart-upload',
             preSignedUrlEndpoint: 'get-presigned-url',
@@ -27,10 +29,8 @@
             completeMultipartUploadCallback: (response) => {
                 console.log(response);
             },
-            chunkSize: 10
+            chunkSize: 10 * 1024 * 1024
         });
-
-        
     </script>
 </body>
 

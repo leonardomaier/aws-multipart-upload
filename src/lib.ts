@@ -18,7 +18,7 @@ export class AWSMultipartUpload {
     private initiateMultipartUploadEndpoint: string;
     private preSignedUrlEndpoint: string;
     private completeMultipartUploadEndpoint: string;
-    private chunkSize: number = 10;
+    private chunkSize: number = 10 * 1024 * 1024 // 10mb;
     private initiateMultipartUploadCallback: MultipartUploadCallbackReturnString = () => '';
     private getPreSignedUrlCallback: MultipartUploadCallbackReturnString = () => '';
     private completeMultipartUploadCallback: MultipartUploadCallbackReturnAny = () => { return };

@@ -6,6 +6,7 @@ const port = 3000
 
 app.use(express.json())
 app.use(cors())
+app.use(express.static('./'))
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -34,12 +35,7 @@ async function cleanupIncompleteMultipartUploads(bucketName) {
   }
 }
 
-// cleanupIncompleteMultipartUploads();
-
-
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-})
+cleanupIncompleteMultipartUploads();
 
 app.post('/initiate-multipart-upload', async (req, res) => {
   const { filename, fileType } = req.body;
